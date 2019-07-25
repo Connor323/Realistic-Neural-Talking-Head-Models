@@ -14,17 +14,19 @@ from network.blocks import *
 from network.model import *
 
 """Create dataset and net"""
-device = torch.device("cuda:0")
+os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'
+device = torch.device("cuda")
 cpu = torch.device("cpu")
 path_to_chkpt = 'model_weights.tar'
 path_to_backup = 'backup_model_weights.tar'
-dataset = VidDataSet(K=8, path_to_mp4 = 'mp4', device=device)
+dataset = VidDataSet(K=8, path_to_mp4 = '/home/hao66/project/one-shot-talking-face/dataset/voxceleb1/unzippedFaces', device=device)
+print('# of videos: ', len(dataset))
 
 dataLoader = DataLoader(dataset, batch_size=2, shuffle=True)
 
-G = Generator(224).to(device)
-E = Embedder(224).to(device)
-D = Discriminator(dataset.__len__()).to(device)
+G = torch.nn.DataParallel(Generator(224)).to(device)
+E = torch.nn.DataParallel(Embedder(224)).to(device)
+D = torch.nn.DataParallel(Discriminator(dataset.__len__())).to(device)
 
 G.train()
 E.train()
@@ -35,8 +37,7 @@ optimizerD = optim.Adam(params = D.parameters(), lr=2e-4)
 
 
 """Criterion"""
-criterionG = LossG(VGGFace_body_path='Pytorch_VGGFACE_IR.py',
-                   VGGFace_weight_path='Pytorch_VGGFACE.pth', device=device)
+criterionG = LossG(device=device)
 criterionDreal = LossDSCreal()
 criterionDfake = LossDSCfake()
 
@@ -111,7 +112,7 @@ for epoch in range(epochCurrent, num_epochs):
             r_hat, D_hat_res_list = D(x_hat, g_y, i)
             r, D_res_list = D(x, g_y, i)
 
-            lossG = criterionG(x, x_hat, r_hat, D_res_list, D_hat_res_list, e_vectors, D.W_i, i)
+            lossG = criterionG(x, x_hat, r_hat, D_res_list, D_hat_res_list, e_vectors, D.module.W_i, i)
             lossDfake = criterionDfake(r_hat)
             lossDreal = criterionDreal(r)
 
