@@ -2,11 +2,11 @@
 
 My implementation of Few-Shot Adversarial Learning of Realistic Neural Talking Head Models (Egor Zakharov et al.). https://arxiv.org/abs/1905.08233
 
-![Fake1](https://github.com/vincent-thevenin/Realistic-Neural-Talking-Head-Models/blob/master/examples/1%201.png "Fake 1")
-![Real1](https://github.com/vincent-thevenin/Realistic-Neural-Talking-Head-Models/blob/master/examples/1%202.png "Real 1")
+![Fake1](examples/1%201.png "Fake 1")
+![Real1](examples/1%202.png "Real 1")
 
-![Fake2](https://github.com/vincent-thevenin/Realistic-Neural-Talking-Head-Models/blob/master/examples/2%201.png "Fake 2")
-![Real2](https://github.com/vincent-thevenin/Realistic-Neural-Talking-Head-Models/blob/master/examples/2%202.png "Real 2")
+![Fake2](examples/2%201.png "Fake 2")
+![Real2](examples/2%202.png "Real 2")
 
 *Inference after 5 epochs of training on the smaller test dataset, due to a lack of compute ressources I stopped early (author did 75 epochs with finetuning method and 150 with feed-forward method on the full dataset).*
 
