@@ -5,6 +5,9 @@ from torch.utils.data import Dataset, DataLoader
 from datetime import datetime
 from matplotlib import pyplot as plt
 import os
+from os import path as osp 
+from tensorboardX import SummaryWriter
+import torchvision.utils as vutils
 
 from dataset.dataset_class import VidDataSet
 from dataset.video_extraction_conversion import *
@@ -19,7 +22,7 @@ device = torch.device("cuda")
 cpu = torch.device("cpu")
 path_to_chkpt = 'model_weights.tar'
 path_to_backup = 'backup_model_weights.tar'
-dataset = VidDataSet(K=8, path_to_mp4 = '/home/hao66/project/one-shot-talking-face/dataset/voxceleb1/unzippedFaces', device=device)
+dataset = VidDataSet(K=8, path_to_mp4 = '/data2/hao66/dataset/voxceleb1/unzippedFaces', device=device)
 print('# of videos: ', len(dataset))
 
 dataLoader = DataLoader(dataset, batch_size=2, shuffle=True)
@@ -87,6 +90,8 @@ D.train()
 
 """Training"""
 batch_start = datetime.now()
+writer = SummaryWriter(osp.join('logs/baseline0'))
+total_iters = 0
 
 for epoch in range(epochCurrent, num_epochs):
     for i_batch, (f_lm, x, g_y, i) in enumerate(dataLoader, start=i_batch_current):
@@ -94,6 +99,7 @@ for epoch in range(epochCurrent, num_epochs):
             i_batch_current = 0
             break
         with torch.autograd.enable_grad():
+            total_iters += 2
             #zero the parameter gradients
             optimizerG.zero_grad()
             optimizerD.zero_grad()
@@ -147,39 +153,50 @@ for epoch in range(epochCurrent, num_epochs):
             print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(y)): %.4f'
                   % (epoch, num_epochs, i_batch, len(dataLoader),
                      lossD.item(), lossG.item(), r.mean(), r_hat.mean()))
+            writer.add_scalar("Loss_G", lossG.item(), total_iters)
+            writer.add_scalar("Loss_D", lossD.item(), total_iters)
+            writer.add_scalar("D(x)", r.mean(), total_iters)
+            writer.add_scalar("D(G(y))", r_hat.mean(), total_iters)
 
-            plt.clf()
-            out = x_hat.transpose(1,3)[0]
-            for img_no in range(1,x_hat.shape[0]):
-                out = torch.cat((out, x_hat.transpose(1,3)[img_no]), dim = 1)
-            out = out.type(torch.int32).to(cpu).numpy()
-            plt.imshow(out)
-            plt.show()
+            x_hat_image = vutils.make_grid(x_hat, normalize=True, scale_each=True)
+            x_image = vutils.make_grid(x, normalize=True, scale_each=True)
+            g_y_image = vutils.make_grid(g_y, normalize=True, scale_each=True)
+            writer.add_image("groundtruth", x_image, total_iters)
+            writer.add_image("output", x_hat_image, total_iters)
+            writer.add_image("g_y", g_y_image, total_iters)
 
-            plt.clf()
-            out = x.transpose(1,3)[0]
-            for img_no in range(1,x.shape[0]):
-                out = torch.cat((out, x.transpose(1,3)[img_no]), dim = 1)
-            out = out.type(torch.int32).to(cpu).numpy()
-            plt.imshow(out)
-            plt.show()
+            # plt.clf()
+            # out = x_hat.transpose(1,3)[0]
+            # for img_no in range(1,x_hat.shape[0]):
+            #     out = torch.cat((out, x_hat.transpose(1,3)[img_no]), dim = 1)
+            # out = out.type(torch.int32).to(cpu).numpy()
+            # plt.imshow(out)
+            # plt.show()
 
-            plt.clf()
-            out = g_y.transpose(1,3)[0]
-            for img_no in range(1,g_y.shape[0]):
-                out = torch.cat((out, g_y.transpose(1,3)[img_no]), dim = 1)
-            out = out.type(torch.int32).to(cpu).numpy()
-            plt.imshow(out)
-            plt.show()
+            # plt.clf()
+            # out = x.transpose(1,3)[0]
+            # for img_no in range(1,x.shape[0]):
+            #     out = torch.cat((out, x.transpose(1,3)[img_no]), dim = 1)
+            # out = out.type(torch.int32).to(cpu).numpy()
+            # plt.imshow(out)
+            # plt.show()
+
+            # plt.clf()
+            # out = g_y.transpose(1,3)[0]
+            # for img_no in range(1,g_y.shape[0]):
+            #     out = torch.cat((out, g_y.transpose(1,3)[img_no]), dim = 1)
+            # out = out.type(torch.int32).to(cpu).numpy()
+            # plt.imshow(out)
+            # plt.show()
 
         if i_batch % 100 == 99:
             lossesD.append(lossD.item())
             lossesG.append(lossG.item())
 
-            plt.clf()
-            plt.plot(lossesG) #blue
-            plt.plot(lossesD) #orange
-            plt.show()
+            # plt.clf()
+            # plt.plot(lossesG) #blue
+            # plt.plot(lossesD) #orange
+            # plt.show()
 
             print('Saving latest...')
             torch.save({

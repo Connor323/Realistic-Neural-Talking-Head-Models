@@ -67,10 +67,12 @@ def select_frames_new(video_path, K):
     
     # Read until video is completed or no frames needed
     frame_idx = 0
-    while(frame_idx < n_frames):
-        frame = cv2.imread(files[frame_idx])
-        
-        if rand_frames_idx[frame_idx] == 1:
+    while(len(frames_list) < K):
+        if len(frames_list) >= n_frames: 
+            rand_frame = frames_list[np.random.randint(len(frames_list))].copy()
+            frames_list.append(rand_frame)
+        elif rand_frames_idx[frame_idx] == 1:
+            frame = cv2.imread(files[frame_idx])
             RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             RGB = cv2.resize(RGB, (224, 224))
             frames_list.append(RGB)
